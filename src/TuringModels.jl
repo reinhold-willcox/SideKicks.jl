@@ -213,16 +213,25 @@ function create_general_mcmc_model(;
     e_dist = priors.e_dist
     vkick_dist = priors.vkick_dist
     frac_dist = priors.frac_dist
-    venv_N_100kms_dist = priors.venv_N_100kms_dist
-    venv_E_100kms_dist = priors.venv_E_100kms_dist
+    venv_δ_100kms_dist = priors.venv_δ_100kms_dist
+    venv_α_100kms_dist = priors.venv_α_100kms_dist
     venv_r_100kms_dist = priors.venv_r_100kms_dist
 
-    valid_values = [:P_f, :e_f, :K1, :K2, :m1_f, :m2_f, :Ω_f, :ω_f, :i_f, :v_N, :v_E, :v_r]
+    valid_values = [:P_f, :P_circ, :e_f, :K1, :K2, :m1_f, :m2_f, :Ω_f, :ω_f, :i_f, :v_δ, :v_α, :v_r]
     for prop ∈ observations.props
         if prop ∉ valid_values
-            throw(DomainError(observation.props, "Allowed observations are only [:P_f, :e_f, :K1, :K2, :m1_f, :m2_f, :Ω_f, :ω_f, :i_f, :v_N, :v_E, :v_r]"))
+            throw(DomainError(observation.props, "Allowed observations are only [:P_f, :P_circ, :e_f, :K1, :K2, :m1_f, :m2_f, :Ω_f, :ω_f, :i_f, :v_δ, :v_α, :v_r]"))
         end
     end
+    use_Pf = true
+    if :P_circ ∈ observations.props
+        if (:P_f ∈ observations.props) || (:e_f ∈ observations.props)
+            throw(DomainError(observation.props, "Cannot have P_circ if either P_f or e_f are included"))
+        else
+            use_Pf = false
+        end
+    end
+
     if !(likelihood == :Cauchy || likelihood == :Normal)
         throw(DomainError(likelihood, "likelihood must be either :Cauchy or :Normal"))
     end
@@ -287,25 +296,34 @@ function create_general_mcmc_model(;
         end
 
         #Initial systemic velocity parameters
-        venv_N_100kms ~ venv_N_100kms_dist
-        venv_E_100kms ~ venv_E_100kms_dist
+        venv_δ_100kms ~ venv_δ_100kms_dist
+        venv_α_100kms ~ venv_α_100kms_dist
         venv_r_100kms ~ venv_r_100kms_dist
-        venv_N = venv_N_100kms*100*km_per_s 
-        venv_E = venv_E_100kms*100*km_per_s 
+        venv_δ = venv_δ_100kms*100*km_per_s 
+        venv_α = venv_α_100kms*100*km_per_s 
         venv_r = venv_r_100kms*100*km_per_s 
 
         #m1 is assumed to remain constant, no impact velocity - TODO: relax this later
         m1_f = m1_i
-        a_f, e_f, Ω_f, ω_f, i_f, vsys_N, vsys_E, vsys_r = 
+        a_f, e_f, Ω_f, ω_f, i_f, vsys_δ, vsys_α, vsys_r = 
             post_supernova_general_orbit_parameters(m1_i=m1_i, m2_i=m2_i, a_i=a_i, e_i=e_i, m2_f=m2_f, 
                 vkick=vkick, θ=θ, ϕ=ϕ, ν_i=ν_i, Ω_i=Ω_i, ω_i=ω_i, i_i=i_i)
         P_f = kepler_P_from_a(m1=m1_f, m2=m2_f, a=a_f)
-        K1 = RV_semiamplitude_K1(m1=m1_f, m2=m2_f, P=P_f, e=e_f, i=i_f)
-        K2 = RV_semiamplitude_K1(m1=m2_f, m2=m1_f, P=P_f, e=e_f, i=i_f)
-        vsys = sqrt( vsys_N^2 + vsys_E^2 + vsys_r^2)
+        P_circ = P_f * (1-e_f^2)^(3/2)
+        #e_circ = 0
 
-        v_N = venv_N + vsys_N
-        v_E = venv_E + vsys_E
+        if use_Pf 
+            K1 = RV_semiamplitude_K1(m1=m1_f, m2=m2_f, P=P_f, e=e_f, i=i_f)
+            K2 = RV_semiamplitude_K1(m1=m2_f, m2=m1_f, P=P_f, e=e_f, i=i_f)
+        else
+            K1 = RV_semiamplitude_K1(m1=m1_f, m2=m2_f, P=P_circ, e=0.0, i=i_f)
+            K2 = RV_semiamplitude_K1(m1=m2_f, m2=m1_f, P=P_circ, e=0.0, i=i_f)
+        end
+
+        vsys = sqrt( vsys_δ^2 + vsys_α^2 + vsys_r^2)
+
+        v_δ = venv_δ + vsys_δ
+        v_α = venv_α + vsys_α
         v_r = venv_r + vsys_r
         
         use_cauchy = likelihood == :Cauchy
@@ -315,6 +333,10 @@ function create_general_mcmc_model(;
                 use_cauchy ?
                     obs_vals[ii] ~ Cauchy(P_f, obs_errs[ii]) :
                     obs_vals[ii] ~ Normal(P_f, obs_errs[ii])
+            elseif obs_symbol == :P_circ
+                use_cauchy ?
+                    obs_vals[ii] ~ Cauchy(P_circ, obs_errs[ii]) :
+                    obs_vals[ii] ~ Normal(P_circ, obs_errs[ii])
             elseif obs_symbol == :e_f
                 use_cauchy ?
                     obs_vals[ii] ~ Cauchy(e_f, obs_errs[ii]) :
@@ -347,14 +369,14 @@ function create_general_mcmc_model(;
                 use_cauchy ?
                     obs_vals[ii] ~ WrappedCauchy(ω_f, obs_errs[ii]) :
                     obs_vals[ii] ~ ModVonMises(ω_f, 1/obs_errs[ii]^2)
-            elseif obs_symbol == :v_N
+            elseif obs_symbol == :v_δ
                 use_cauchy ?
-                    obs_vals[ii] ~ Cauchy(v_N, obs_errs[ii]) :
-                    obs_vals[ii] ~ Normal(v_N, obs_errs[ii])
-            elseif obs_symbol == :v_E
+                    obs_vals[ii] ~ Cauchy(v_δ, obs_errs[ii]) :
+                    obs_vals[ii] ~ Normal(v_δ, obs_errs[ii])
+            elseif obs_symbol == :v_α
                 use_cauchy ?
-                    obs_vals[ii] ~ Cauchy(v_E, obs_errs[ii]) :
-                    obs_vals[ii] ~ Normal(v_E, obs_errs[ii])
+                    obs_vals[ii] ~ Cauchy(v_α, obs_errs[ii]) :
+                    obs_vals[ii] ~ Normal(v_α, obs_errs[ii])
             elseif obs_symbol == :v_r
                 use_cauchy ?
                     obs_vals[ii] ~ Cauchy(v_r, obs_errs[ii]) :
@@ -367,15 +389,15 @@ function create_general_mcmc_model(;
 
         return     ( m1_i,  m2_i,  P_i,  e_i,  a_i,  Ω_i,  ω_i,  i_i,  sum_ωi_νi,
                      vkick,  θ,  ϕ,  dm2,  frac,  ν_i, 
-                     m1_f,  m2_f,  P_f,  e_f,  a_f,  Ω_f,  ω_f,  i_f, 
-                     K1,  K2,  v_N,  v_E,  v_r,  vsys, 
-                     venv_N,  venv_E,  venv_r,  vsys_N,  vsys_E,  vsys_r )
+                     m1_f,  m2_f,  P_f,  P_circ, e_f,  a_f,  Ω_f,  ω_f,  i_f, 
+                     K1,  K2,  v_δ,  v_α,  v_r,  vsys, 
+                     venv_δ,  venv_α,  venv_r,  vsys_δ,  vsys_α,  vsys_r )
     end
     return_props = [:m1_i, :m2_i, :P_i, :e_i, :a_i, :Ω_i, :ω_i, :i_i, :sum_ωi_νi,
                     :vkick, :θ, :ϕ, :dm2, :frac, :ν_i, 
-                    :m1_f, :m2_f, :P_f, :e_f, :a_f, :Ω_f, :ω_f, :i_f, 
-                    :K1, :K2, :v_N, :v_E, :v_r, :vsys, 
-                    :venv_N, :venv_E, :venv_r, :vsys_N, :vsys_E, :vsys_r ]
+                    :m1_f, :m2_f, :P_f, :P_circ, :e_f, :a_f, :Ω_f, :ω_f, :i_f, 
+                    :K1, :K2, :v_δ, :v_α, :v_r, :vsys, 
+                    :venv_δ, :venv_α, :venv_r, :vsys_δ, :vsys_α, :vsys_r ]
 
     # Need to combine some of the observations to compare against the predicted output
     obs_vals_cgs = observations.vals .* observations.units

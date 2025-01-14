@@ -298,20 +298,20 @@ function post_supernova_general_orbit_parameters(;m1_i, m2_i, a_i, e_i=0, m1_f=-
     if (sinν < 0)
         τ = -τ
     end
-    δ = ω_i + ν_i - τ
-    cosδ = cos(δ)
-    sinδ = sin(δ)
+    ϵ = ω_i + ν_i - τ
+    cosϵ = cos(ϵ)
+    sinϵ = sin(ϵ)
 
     # Elements of rotation matrix, to convert from (e_par, e_per, e_z) basis to
     # (W, N, O) basis, corresponding to celestial west and north, and O towards the observer.
-    R_w_par =  cosi*cosΩ*cosδ - sinΩ*sinδ
-    R_w_per = -cosi*cosΩ*sinδ - sinΩ*cosδ
+    R_w_par =  cosi*cosΩ*cosϵ - sinΩ*sinϵ
+    R_w_per = -cosi*cosΩ*sinϵ - sinΩ*cosϵ
     R_w_z   = -sini*cosΩ
-    R_n_par =  cosi*sinΩ*cosδ + cosΩ*sinδ 
-    R_n_per = -cosi*sinΩ*sinδ + cosΩ*cosδ 
+    R_n_par =  cosi*sinΩ*cosϵ + cosΩ*sinϵ 
+    R_n_per = -cosi*sinΩ*sinϵ + cosΩ*cosϵ 
     R_n_z   = -sini*sinΩ
-    R_o_par =  sini*cosδ
-    R_o_per = -sini*sinδ
+    R_o_par =  sini*cosϵ
+    R_o_per = -sini*sinϵ
     R_o_z   =  cosi
 
     # velocity, simply compute from change in momentum

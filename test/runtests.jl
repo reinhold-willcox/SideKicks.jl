@@ -119,18 +119,18 @@ for vkick in [0, 30*km_per_s]
                     for ν_i in [0.1π, 0.9π, 1.5π, 1.9π]
                         for m1_f in [0.9*m1_i, 0.95*m1_i, m1_i]
                             for m2_f in [0.9*m2_i, 0.95*m2_i, m2_i]
-                                a_f_s, e_f_s, v_N_s, v_E_s, v_r_s, Ω_f_s, ω_f_s, i_f_s = 
+                                a_f_s, e_f_s, v_δ_s, v_α_s, v_r_s, Ω_f_s, ω_f_s, i_f_s = 
                                     symbolic_post_kick_parameters_a_e( a=a_i, e=e_i, m_1=m1_i, m_2=m2_i, ν=ν_i, vkick=vkick, 
                                     θ=θ, ϕ=ϕ, v_im=vimp, m_1f = m1_f, m_2f = m2_f, Ω=Ω_i, ω=ω_i, i=i_i, function_list=symbolic_functions_list)
-                                a_f, e_f, Ω_f, ω_f, i_f, v_ra, v_dec, v_rad = SideKicks.post_supernova_general_orbit_parameters(m1_i=m1_i, m2_i=m2_i, a_i=a_i, e_i=e_i, m1_f=m1_f, m2_f=m2_f, vkick=vkick, θ=θ, ϕ=ϕ, vimp=vimp, ν_i=ν_i, Ω_i=Ω_i, ω_i=ω_i, i_i=i_i)
+                                a_f, e_f, Ω_f, ω_f, i_f, v_α, v_δ, v_r = SideKicks.post_supernova_general_orbit_parameters(m1_i=m1_i, m2_i=m2_i, a_i=a_i, e_i=e_i, m1_f=m1_f, m2_f=m2_f, vkick=vkick, θ=θ, ϕ=ϕ, vimp=vimp, ν_i=ν_i, Ω_i=Ω_i, ω_i=ω_i, i_i=i_i)
                                 @test a_f_s ≈ a_f
                                 @test e_f_s ≈ e_f
                                 @test Ω_f_s ≈ Ω_f atol=1e-6
                                 @test ω_f_s ≈ ω_f atol=1e-6
                                 @test i_f_s ≈ i_f atol=1e-6
-                                @test v_E_s ≈ v_ra atol=1e-6
-                                @test v_N_s ≈ v_dec atol=1e-6
-                                @test v_r_s ≈ v_rad atol=1e-6
+                                @test v_α_s ≈ v_α atol=1e-6
+                                @test v_δ_s ≈ v_δ atol=1e-6
+                                @test v_r_s ≈ v_r atol=1e-6
 
                                 if (vimp == 0 && vkick == 0 && m1_f == m1_i && m2_f == m2_i)
                                     # no kick example, verify we recover the input values
@@ -139,9 +139,9 @@ for vkick in [0, 30*km_per_s]
                                     @test Ω_f ≈ Ω_i atol=1e-6
                                     @test ω_f ≈ ω_i atol=1e-6
                                     @test i_f ≈ i_i atol=1e-6
-                                    @test v_ra ≈ 0
-                                    @test v_dec ≈ 0
-                                    @test v_rad ≈ 0
+                                    @test v_α ≈ 0
+                                    @test v_δ ≈ 0
+                                    @test v_r ≈ 0
                                 end
                             end
                         end
