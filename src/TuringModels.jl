@@ -83,10 +83,18 @@ function create_simplified_mcmc_model(;
     vkick_dist = priors.vkick_dist
     frac_dist = priors.frac_dist
 
-    valid_values = [:P_f, :e_f, :K1, :K2, :m1_f, :m2_f, :i_f, :vsys]
+    valid_values = [:P_f, :P_circ, :e_f, :K1, :K2, :m1_f, :m2_f, :i_f, :vsys]
     for prop ∈ observations.props
         if prop ∉ valid_values
-            throw(DomainError(observation.props, "Allowed observations are only [:P_f, :e_f, :K1, :K2, :m1_f, :m2_f, :i_f, :vsys]"))
+            throw(DomainError(observations.props, "Allowed observations are only [:P_f, :e_f, :K1, :K2, :m1_f, :m2_f, :i_f, :vsys]"))
+        end
+    end
+    use_Pf = true
+    if :P_circ ∈ observations.props
+        if (:P_f ∈ observations.props) || (:e_f ∈ observations.props)
+            throw(DomainError(observations.props, "Cannot have P_circ if either P_f or e_f are included"))
+        else
+            use_Pf = false
         end
     end
 
@@ -130,9 +138,14 @@ function create_simplified_mcmc_model(;
         m1_f = m1_i
         a_f, e_f = post_supernova_circular_orbit_a(m1_i=m1_i, m2_i=m2_i, a_i=a_i, m2_f=m2_f, vkick=vkick, θ=θ, ϕ=ϕ)
         P_f = kepler_P_from_a(m1=m1_f, m2=m2_f, a=a_f)
-        K1 = RV_semiamplitude_K1(m1=m1_f, m2=m2_f, P=P_f, e=e_f, i=i_f)
-        K2 = RV_semiamplitude_K1(m1=m2_f, m2=m1_f, P=P_f, e=e_f, i=i_f)
-
+        P_circ = P_f * (1-e_f^2)^(3/2)
+        if use_Pf 
+            K1 = RV_semiamplitude_K1(m1=m1_f, m2=m2_f, P=P_f, e=e_f, i=i_f)
+            K2 = RV_semiamplitude_K1(m1=m2_f, m2=m1_f, P=P_f, e=e_f, i=i_f)
+        else
+            K1 = RV_semiamplitude_K1(m1=m1_f, m2=m2_f, P=P_circ, e=0.0, i=i_f)
+            K2 = RV_semiamplitude_K1(m1=m2_f, m2=m1_f, P=P_circ, e=0.0, i=i_f)
+        end
         vsys = post_supernova_circular_orbit_vsys(m1_i=m1_i, m2_i=m2_i, a_i=a_i, m1_f=m1_i, m2_f=m2_f, vkick=vkick, θ=θ, ϕ=ϕ)
 
         use_cauchy = likelihood == :Cauchy
@@ -142,6 +155,10 @@ function create_simplified_mcmc_model(;
                 use_cauchy ?
                     obs_vals[ii] ~ Cauchy(P_f, obs_errs[ii]) :
                     obs_vals[ii] ~ Normal(P_f, obs_errs[ii])
+            elseif obs_symbol == :P_circ
+                use_cauchy ?
+                    obs_vals[ii] ~ Cauchy(P_circ, obs_errs[ii]) :
+                    obs_vals[ii] ~ Normal(P_circ, obs_errs[ii])
             elseif obs_symbol == :e_f
                 use_cauchy ?
                     obs_vals[ii] ~ Cauchy(e_f, obs_errs[ii]) :
@@ -175,9 +192,13 @@ function create_simplified_mcmc_model(;
 
         # other params
         dm2 = m2_i - m2_f
-        return     (m1_i,    m2_i,    P_i,   a_i,     i_f,  vkick, θ, ϕ,  m2_f,  a_f,   P_f,  e_f,  K1,  K2, frac, dm2, vsys) 
+        return     ( m1_i,    m2_i,    P_i,   a_i,     i_f,  
+                     vkick,  θ,  ϕ,  m2_f,  a_f,   P_f,  P_circ,  e_f,  
+                     K1,  K2,  frac,  dm2,  vsys) 
     end
-    return_props = [:m1_i,   :m2_i,   :P_i,  :a_i,    :i_f, :vkick, :θ, :ϕ, :m2_f, :a_f,  :P_f, :e_f, :K1, :K2, :frac, :dm2, :vsys] 
+    return_props = [:m1_i,   :m2_i,   :P_i,  :a_i,    :i_f, 
+                    :vkick, :θ, :ϕ, :m2_f, :a_f,  :P_f, :P_circ, :e_f, 
+                    :K1, :K2, :frac, :dm2, :vsys] 
 
     obs_vals_cgs = observations.vals .* observations.units
     obs_errs_cgs = observations.errs .* observations.units
@@ -220,13 +241,13 @@ function create_general_mcmc_model(;
     valid_values = [:P_f, :P_circ, :e_f, :K1, :K2, :m1_f, :m2_f, :Ω_f, :ω_f, :i_f, :v_δ, :v_α, :v_r]
     for prop ∈ observations.props
         if prop ∉ valid_values
-            throw(DomainError(observation.props, "Allowed observations are only [:P_f, :P_circ, :e_f, :K1, :K2, :m1_f, :m2_f, :Ω_f, :ω_f, :i_f, :v_δ, :v_α, :v_r]"))
+            throw(DomainError(observations.props, "Allowed observations are only [:P_f, :P_circ, :e_f, :K1, :K2, :m1_f, :m2_f, :Ω_f, :ω_f, :i_f, :v_δ, :v_α, :v_r]"))
         end
     end
     use_Pf = true
     if :P_circ ∈ observations.props
         if (:P_f ∈ observations.props) || (:e_f ∈ observations.props)
-            throw(DomainError(observation.props, "Cannot have P_circ if either P_f or e_f are included"))
+            throw(DomainError(observations.props, "Cannot have P_circ if either P_f or e_f are included"))
         else
             use_Pf = false
         end
@@ -310,8 +331,6 @@ function create_general_mcmc_model(;
                 vkick=vkick, θ=θ, ϕ=ϕ, ν_i=ν_i, Ω_i=Ω_i, ω_i=ω_i, i_i=i_i)
         P_f = kepler_P_from_a(m1=m1_f, m2=m2_f, a=a_f)
         P_circ = P_f * (1-e_f^2)^(3/2)
-        #e_circ = 0
-
         if use_Pf 
             K1 = RV_semiamplitude_K1(m1=m1_f, m2=m2_f, P=P_f, e=e_f, i=i_f)
             K2 = RV_semiamplitude_K1(m1=m2_f, m2=m1_f, P=P_f, e=e_f, i=i_f)
@@ -319,7 +338,6 @@ function create_general_mcmc_model(;
             K1 = RV_semiamplitude_K1(m1=m1_f, m2=m2_f, P=P_circ, e=0.0, i=i_f)
             K2 = RV_semiamplitude_K1(m1=m2_f, m2=m1_f, P=P_circ, e=0.0, i=i_f)
         end
-
         vsys = sqrt( vsys_δ^2 + vsys_α^2 + vsys_r^2)
 
         v_δ = venv_δ + vsys_δ
