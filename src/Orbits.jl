@@ -230,7 +230,6 @@ using equations from Willcox, Marchant, Vigna-Gomez, et al. 2025
 - e_i:   pre-explosion orbital eccentricity              [-]
 - m1_f:  post-explosion mass of non-exploding component  [g]           
 - m2_f:  post-explosion mass of exploding component      [g]   
--
 - vkick: kick velocity                                   [cm/s] 
 - θ:     polar kick angle (away from e_par)              [rad]
 - ϕ:     azimuthal kick angle (off of e_perp)            [rad]
@@ -247,7 +246,6 @@ using equations from Willcox, Marchant, Vigna-Gomez, et al. 2025
 - Ω_f:    post-explosion longitude of ascending node         [rad]      
 - ω_f:    post-explosion argument of periastron              [rad]    
 - i_f:    post-explosion inclination                         [rad]     
-
 - Δv_α:   post-explosion systemic velocity, toward RA        [rad]
 - Δv_δ:   post-explosion systemic velocity, toward Dec       [rad]      
 - Δv_r:   post-explosion radial velocity, away from observer [rad]      
