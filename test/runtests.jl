@@ -119,7 +119,7 @@ for vkick in [0, 30*km_per_s]
                     for ν_i in [0.1π, 0.9π, 1.5π, 1.9π]
                         for m1_f in [0.9*m1_i, 0.95*m1_i, m1_i]
                             for m2_f in [0.9*m2_i, 0.95*m2_i, m2_i]
-                                a_f_s, e_f_s, v_δ_s, v_α_s, v_r_s, Ω_f_s, ω_f_s, i_f_s = 
+                                a_f_s, e_f_s, v_α_s, v_δ_s, v_r_s, Ω_f_s, ω_f_s, i_f_s = 
                                     symbolic_post_kick_parameters_a_e( a=a_i, e=e_i, m_1=m1_i, m_2=m2_i, ν=ν_i, vkick=vkick, 
                                     θ=θ, ϕ=ϕ, v_im=vimp, m_1f = m1_f, m_2f = m2_f, Ω=Ω_i, ω=ω_i, i=i_i, function_list=symbolic_functions_list)
                                 a_f, e_f, Ω_f, ω_f, i_f, v_α, v_δ, v_r = SideKicks.post_supernova_general_orbit_parameters(m1_i=m1_i, m2_i=m2_i, a_i=a_i, e_i=e_i, m1_f=m1_f, m2_f=m2_f, vkick=vkick, θ=θ, ϕ=ϕ, vimp=vimp, ν_i=ν_i, Ω_i=Ω_i, ω_i=ω_i, i_i=i_i)

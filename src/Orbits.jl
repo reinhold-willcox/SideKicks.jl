@@ -169,7 +169,7 @@ function post_supernova_circular_orbit_P(;m1_i, m2_i, P_i, m1_f=-1.0, m2_f, vkic
 end
 
 """
-    post_supernova_circular_orbit_vsys(;m1_i, m2_i, a_i, m1_f=-1, m2_f, vkick=0, θ=0, ϕ=0, vimp=0)
+    post_supernova_circular_orbit_Δv(;m1_i, m2_i, a_i, m1_f=-1, m2_f, vkick=0, θ=0, ϕ=0, vimp=0)
 
 Compute post-kick systemic velocity for a circular orbit
 Tauris et al. (1999): Monthly Notices of the Royal Astronomical Society, Volume 310, Issue 4, pp. 1165-1169.
@@ -186,9 +186,9 @@ Tauris et al. (1999): Monthly Notices of the Royal Astronomical Society, Volume 
 - vimp:  imparted kick velocity on companion            [cm/s]     
     
 # Output:
-- vsys_f: post-explosion systemic velocity              [cm/s]
+- Δv: post-explosion systemic velocity              [cm/s]
 """
-function post_supernova_circular_orbit_vsys(;m1_i, m2_i, a_i, m1_f=-1, m2_f, vkick=0, θ=0, ϕ=0, vimp=0)
+function post_supernova_circular_orbit_Δv(;m1_i, m2_i, a_i, m1_f=-1, m2_f, vkick=0, θ=0, ϕ=0, vimp=0)
     if m1_f == -1
         m1_f = m1_i
     end
@@ -203,9 +203,9 @@ function post_supernova_circular_orbit_vsys(;m1_i, m2_i, a_i, m1_f=-1, m2_f, vki
     Δp_x = (m2_f*m1_i - m2_i*m1_f)/(m2_i + m1_i)*v_rel + m2_f*vkick*cosθ
     Δp_y = m1_f*vimp + m2_f*vkick*sinθ*cosϕ + m2_f*vimp
     Δp_z = m2_f*vkick*sinθ*sinϕ
-    vsys_f = sqrt(Δp_x^2 + Δp_y^2 + Δp_z^2)/(m2_f + m1_f)
+    Δv = sqrt(Δp_x^2 + Δp_y^2 + Δp_z^2)/(m2_f + m1_f)
 
-    return vsys_f
+    return Δv
 end
 
 
@@ -221,7 +221,7 @@ end
         ν_i=0, Ω_i=0, ω_i=0, i_i=0)
 
 Compute post-kick properties for a general pre-explosion orbit 
-using equations from [Marchant, Willcox, Vigna-Gomez] TODO
+using equations from Willcox, Marchant, Vigna-Gomez, et al. 2025 
 
 # Arguments:
 - m1_i:  pre-explosion  mass of non-exploding component  [g]           
@@ -241,14 +241,17 @@ using equations from [Marchant, Willcox, Vigna-Gomez] TODO
     - ω_i: pre-explosion argument of periastron               [rad]
     - i_i: pre-explosion inclination                          [rad]
     
-- a_f:     post-explosion orbital separation                  [cm]
-- e_f:     post-explosion orbital eccentricity                [-]
-- Ω_f:     post-explosion longitude of ascending node         [rad]      
-- ω_f:     post-explosion argument of periastron              [rad]    
-- i_f:     post-explosion inclination                         [rad]     
-- vCM_n:   post-explosion systemic velocity, toward N         [rad]
-- vCM_w:   post-explosion systemic velocity, toward W         [rad]      
-- vCM_rad: post-explosion radial velocity, toward negative O  [rad]      
+# Output:
+- a_f:    post-explosion orbital separation                  [cm]
+- e_f:    post-explosion orbital eccentricity                [-]
+- Ω_f:    post-explosion longitude of ascending node         [rad]      
+- ω_f:    post-explosion argument of periastron              [rad]    
+- i_f:    post-explosion inclination                         [rad]     
+
+- Δv_α:   post-explosion systemic velocity, toward RA        [rad]
+- Δv_δ:   post-explosion systemic velocity, toward Dec       [rad]      
+- Δv_r:   post-explosion radial velocity, away from observer [rad]      
+
 """
 function post_supernova_general_orbit_parameters(;m1_i, m2_i, a_i, e_i=0, m1_f=-1, m2_f, vkick=0, 
         θ=0, ϕ=0, vimp=0, ν_i=0, Ω_i=0, ω_i=0, i_i=0)
@@ -315,18 +318,18 @@ function post_supernova_general_orbit_parameters(;m1_i, m2_i, a_i, e_i=0, m1_f=-
     R_o_z   =  cosi
 
     # velocity, simply compute from change in momentum
-    vCM_par = 1/M_f* (v_reli/M_i* (m1_i*m2_f - m1_f*m2_i)
+    v_par = 1/M_f* (v_reli/M_i* (m1_i*m2_f - m1_f*m2_i)
                       + m2_f*vkick*cosθ + h_ν*m1_f*vimp)
-    vCM_per = 1/M_f* (m2_f*vkick*sinθ*cosϕ + j_ν*m1_f*vimp)
-    vCM_z   = 1/M_f* (m2_f*vkick*sinθ*sinϕ)
+    v_per = 1/M_f* (m2_f*vkick*sinθ*cosϕ + j_ν*m1_f*vimp)
+    v_z   = 1/M_f* (m2_f*vkick*sinθ*sinϕ)
 
-    vCM_w = R_w_par*vCM_par + R_w_per*vCM_per + R_w_z*vCM_z
-    vCM_n = R_n_par*vCM_par + R_n_per*vCM_per + R_n_z*vCM_z
-    vCM_o = R_o_par*vCM_par + R_o_per*vCM_per + R_o_z*vCM_z
+    v_w = R_w_par*v_par + R_w_per*v_per + R_w_z*v_z
+    v_n = R_n_par*v_par + R_n_per*v_per + R_n_z*v_z
+    v_o = R_o_par*v_par + R_o_per*v_per + R_o_z*v_z
     # Swap into RA, Dec, Radial velocity reference frame
-    vCM_ra =  -vCM_w
-    vCM_dec =  vCM_n
-    vCM_rad = -vCM_o 
+    Δv_α = -v_w
+    Δv_δ =  v_n
+    Δv_r = -v_o 
 
     # obtain inclination from direction of orbital angular momentum vector
     L_par = -j_ν*α*sinθ*sinϕ/L_vec_bracket_norm
@@ -358,7 +361,7 @@ function post_supernova_general_orbit_parameters(;m1_i, m2_i, a_i, e_i=0, m1_f=-
     # The periastron angle is the same as the true anomaly if the star is moving
     # away from periastron. Otherwise we need to correct for this by computing the 
     # component of velocity along the line joining both objects (in the COM frame).
-    vcm_1f_dot_y = vimp - h_ν*(m2_i/M_i*v_reli + vCM_par) - j_ν*vCM_per
+    vcm_1f_dot_y = vimp - h_ν*(m2_i/M_i*v_reli + v_par) - j_ν*v_per
     if vcm_1f_dot_y<0
         ν_f = 2π - ν_f
     end
@@ -388,6 +391,6 @@ function post_supernova_general_orbit_parameters(;m1_i, m2_i, a_i, e_i=0, m1_f=-
         ω_f = 2π + ω_f
     end
 
-    return (a_f, e_f, Ω_f, ω_f, i_f, vCM_ra, vCM_dec, vCM_rad)
+    return (a_f, e_f, Ω_f, ω_f, i_f, Δv_α, Δv_δ, Δv_r)
 end
 

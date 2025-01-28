@@ -124,9 +124,9 @@ function symbolic_kick_functions_vcm_and_orbital_elements()
     global ι_function = build_function(ι_final, 
              [a, a_final, e, e_final, ν, L_x, L_y, L_z, v_xcm, v_ycm, v_zcm, v_1y, Ω, ω, i],  expression=Val{false});
 
-    global v_δ_function = build_function(v_cm_rot[2], 
-               [a, a_final, e, e_final, ν, L_x, L_y, L_z, v_xcm, v_ycm, v_zcm, v_1y, Ω, ω, i],  expression=Val{false});
     global v_α_function = build_function(-v_cm_rot[1], 
+               [a, a_final, e, e_final, ν, L_x, L_y, L_z, v_xcm, v_ycm, v_zcm, v_1y, Ω, ω, i],  expression=Val{false});
+    global v_δ_function = build_function(v_cm_rot[2], 
                [a, a_final, e, e_final, ν, L_x, L_y, L_z, v_xcm, v_ycm, v_zcm, v_1y, Ω, ω, i],  expression=Val{false});
     global v_r_function = build_function(-v_cm_rot[3], 
                [a, a_final, e, e_final, ν, L_x, L_y, L_z, v_xcm, v_ycm, v_zcm, v_1y, Ω, ω, i],  expression=Val{false});
@@ -148,7 +148,7 @@ function create_symbolic_functions_list()
     symbolic_kick_functions_vcm_and_orbital_elements()
     
     global symbolic_functions_list = (energy_function,L_x_function,L_y_function,L_z_function,v_xcm_function,v_ycm_function,v_zcm_function,v_1y_function,
-                            Ω_function, ω_function, ι_function, v_δ_function, v_α_function, v_r_function)
+                            Ω_function, ω_function, ι_function, v_α_function, v_δ_function, v_r_function)
     return nothing
 end
 
@@ -189,9 +189,9 @@ function symbolic_post_kick_parameters_a_e(; a, e, m_1, m_2, ν, vkick, θ, ϕ, 
     ω_f = function_list[10](values2) 
     ι_f = function_list[11](values2) 
 
-    v_δ = function_list[12](values2) 
-    v_α = function_list[13](values2) 
+    v_α = function_list[12](values2) 
+    v_δ = function_list[13](values2) 
     v_r = function_list[14](values2) 
 
-    return (a_final, e_final, v_δ, v_α, v_r, Ω_f, ω_f, ι_f)
+    return (a_final, e_final, v_α, v_δ, v_r, Ω_f, ω_f, ι_f)
 end
