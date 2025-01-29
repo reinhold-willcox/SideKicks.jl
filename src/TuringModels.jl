@@ -234,9 +234,9 @@ function create_general_mcmc_model(;
     e_dist = priors.e_dist
     vkick_dist = priors.vkick_dist
     frac_dist = priors.frac_dist
-    venv_α_100kms_dist = priors.venv_α_100kms_dist
-    venv_δ_100kms_dist = priors.venv_δ_100kms_dist
-    venv_r_100kms_dist = priors.venv_r_100kms_dist
+    Venv_α_100kms_dist = priors.Venv_α_100kms_dist
+    Venv_δ_100kms_dist = priors.Venv_δ_100kms_dist
+    Venv_r_100kms_dist = priors.Venv_r_100kms_dist
 
     valid_values = [:P_f, :P_circ, :e_f, :K1, :K2, :m1_f, :m2_f, :Ω_f, :ω_f, :i_f, :v_α, :v_δ, :v_r]
     for prop ∈ observations.props
