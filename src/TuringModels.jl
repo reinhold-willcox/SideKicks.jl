@@ -238,10 +238,10 @@ function create_general_mcmc_model(;
     Venv_δ_100kms_dist = priors.Venv_δ_100kms_dist
     Venv_r_100kms_dist = priors.Venv_r_100kms_dist
 
-    valid_values = [:P_f, :P_circ, :e_f, :K1, :K2, :m1_f, :m2_f, :Ω_f, :ω_f, :i_f, :v_α, :v_δ, :v_r]
+    valid_values = [:P_f, :P_circ, :e_f, :K1, :K2, :m1_f, :m2_f, :Ω_f, :ω_f, :i_f, :vf_α, :vf_δ, :vf_r]
     for prop ∈ observations.props
         if prop ∉ valid_values
-            throw(DomainError(observations.props, "Allowed observations are only [:P_f, :P_circ, :e_f, :K1, :K2, :m1_f, :m2_f, :Ω_f, :ω_f, :i_f, :v_α, :v_δ, :v_r]"))
+            throw(DomainError(observations.props, "Allowed observations are only [:P_f, :P_circ, :e_f, :K1, :K2, :m1_f, :m2_f, :Ω_f, :ω_f, :i_f, :vf_α, :vf_δ, :vf_r]"))
         end
     end
     use_Pf = true
