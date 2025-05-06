@@ -57,7 +57,7 @@ kick_mcmc = SideKicks.KickMCMC(
         which_model = :general,
         observations = obs,
         priors = priors,
-        nuts_warmup_count = 200,
+        nuts_warmup_count = 500,
         nuts_acceptance_rate = 0.8,
         nsamples = 1000,
         nchains = 4)
@@ -67,11 +67,20 @@ kick_mcmc = SideKicks.KickMCMC(
 Results from the MCMC can be saved to an HDF5 file. In practice, it is ideal to separate the computation of the MCMC
 and its analysis, so plotting of the results is done separetely.
 =#
-SideKicks.SaveResults(String(@__DIR__) * "/results-small.hdf5", kick_mcmc)
+SideKicks.SaveResults("vfts243_results4.hdf5", kick_mcmc)
+
+
+
+
 
 ##
 
-extracts = SideKicks.ExtractResults( String(@__DIR__) * "/results-small.hdf5")
+extracts = SideKicks.ExtractResults("vfts243_results4.hdf5")
 
 
 ##
+
+meta = extracts[4]
+
+##
+

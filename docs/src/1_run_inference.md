@@ -1,8 +1,8 @@
 ```@meta
-EditURL = "../../examples/online_examples/run_inference_vfts243_online.jl"
+EditURL = "../../examples/run_inference_vfts243.jl"
 ```
 
-# Inference example for VFTS 243
+Inference for VFTS 243
 
 In this example we try to match the observed properties of VFTS 243. We start by loading
 up the SideKicks package, as well the Distributions package which we use to define the priors.
@@ -24,11 +24,11 @@ the future to arbitrary user-defined likelihood functions.
 obs = SideKicks.@Observations([
     [:P_f,  10.4031, 0.01,   day],
     [:e_f,  0.017,   0.012,  1],
-    [:m1_f, 25.0,    2.3,    m_sun],
+    [:m1_f, 25.0,    2.3,     m_sun],
     [:K1,   81.4,    1.3,    km_per_s],
-    [:v_N,  138.8,    7.6,     km_per_s], # Gaia 4' w/ MCMC
-    [:v_E,  409.3,    9.3,     km_per_s], # Gaia 4' w/ MCMC
-    [:v_r,  261.5,   0.42,    km_per_s], # Almeida
+    [:vf_α,  409.3,   9.6,    km_per_s], # Gaia 4' w/ MCMC
+    [:vf_δ,  138.8,   7.6,    km_per_s], # Gaia 4' w/ MCMC
+    [:vf_r,  260.2,   0.9,    km_per_s], # Almeida
     [:ω_f,  66,      53,     degree]
 ])
 ````
@@ -43,9 +43,9 @@ priors = SideKicks.@Priors(
     vkick_dist = Uniform(0,4), # in 100 km/s
     frac_dist  = Uniform(0,1.0),
     e_dist = Uniform(0,0.01),
-    venv_N_100kms_dist = Normal(146/100, 40/100), # Gaia 4' w/ MCMC
-    venv_E_100kms_dist = Normal(393/100, 42/100), # Gaia 4' w/ MCMC
-    venv_r_100kms_dist = Normal(270.3/100, 11.1/100) # Almeida w/ MCMC
+    Venv_α_100kms_dist = Normal(393.3/100, 12.0/100), # Gaia 4' w/ MCMC
+    Venv_δ_100kms_dist = Normal(142.8/100, 12.0/100), # Gaia 4' w/ MCMC
+    Venv_r_100kms_dist = Normal(271.1/100, 12.0/100) # Almeida w/ MCMC
 )
 ````
 
@@ -58,9 +58,9 @@ kick_mcmc = SideKicks.KickMCMC(
         which_model = :general,
         observations = obs,
         priors = priors,
-        nuts_warmup_count = 200,
+        nuts_warmup_count = 500,
         nuts_acceptance_rate = 0.8,
-        nsamples = 200,
+        nsamples = 1000,
         nchains = 4)
 ````
 

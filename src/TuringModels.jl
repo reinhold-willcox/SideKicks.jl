@@ -2,79 +2,138 @@ using Turing
 using Distributions
 
 """
+# TuringModels.jl
+
+This file defines custom probability distributions and Turing models for MCMC sampling of pre- and post-explosion properties of astrophysical systems.
+
+## Overview
+- `WrappedCauchy`: A custom distribution resembling the Cauchy distribution on the unit circle.
+- `ModVonMises`: A wrapper for the VonMises distribution to extend its domain to [0, 2π].
+- `create_simplified_mcmc_model`: Creates a simplified Turing model for MCMC sampling, assuming pre-explosion circularity.
+- `create_general_mcmc_model`: Creates a general Turing model for MCMC sampling, allowing for pre-explosion eccentricity.
+"""
+
+"""
     struct WrappedCauchy{T1<:Real, T2<:Real} <: ContinuousUnivariateDistribution
 
-The WrappedCauchy distribution resembles the Cauchy distribution defined on the unit 
-circle from 0 to 2π, with the endpoints wrapped back to each other.
+The `WrappedCauchy` distribution resembles the Cauchy distribution defined on the unit circle from 0 to 2π, with the endpoints wrapped back to each other.
+
+# Fields
+- `μ::T1`: The location parameter (mean angle).
+- `σ::T2`: The scale parameter (controls the spread).
 """
 struct WrappedCauchy{T1<:Real, T2<:Real} <: ContinuousUnivariateDistribution
     μ::T1
     σ::T2
 end
-Distributions.logpdf(d::WrappedCauchy, x::Real) = log(1/(2*π)*(sinh(d.σ)))-log(cosh(d.σ)-cos(x-d.μ))
-Distributions.pdf(d::WrappedCauchy, x::Real) = 1/(2*π)*(sinh(d.σ))/(cosh(d.σ)-cos(x-d.μ))
+
+Distributions.logpdf(d::WrappedCauchy, x::Real) = log(1 / (2 * π) * sinh(d.σ)) - log(cosh(d.σ) - cos(x - d.μ))
+Distributions.pdf(d::WrappedCauchy, x::Real) = 1 / (2 * π) * sinh(d.σ) / (cosh(d.σ) - cos(x - d.μ))
 
 """
     struct ModVonMises{T1<:Real, T2<:Real} <: ContinuousUnivariateDistribution
 
-This is just a wrapper on top of the VonMises distribution (as defined in Distributions.jl)
-to extend its domain. This is because the domain of VonMises is defined to be
-[μ-π, μ+π], and the angles we are concerned with range from [0,2π]
+The `ModVonMises` distribution is a wrapper for the VonMises distribution (as defined in Distributions.jl) to extend its domain to [0, 2π].
+
+# Fields
+- `μ::T1`: The location parameter (mean angle).
+- `κ::T2`: The concentration parameter (controls the spread).
+- `vonMisesDist::ContinuousUnivariateDistribution`: The underlying VonMises distribution.
 """
 struct ModVonMises{T1<:Real, T2<:Real, T3<:ContinuousUnivariateDistribution} <: ContinuousUnivariateDistribution
     μ::T1
     κ::T2
     vonMisesDist::T3
 end
+
+"""
+    ModVonMises(μ::Real, κ::Real) -> ModVonMises
+
+Creates a `ModVonMises` distribution, which is a wrapper for the VonMises distribution to extend its domain to [0, 2π].
+
+# Arguments
+- `μ::Real`: The location parameter (mean angle) of the distribution.
+- `κ::Real`: The concentration parameter (controls the spread) of the distribution.
+
+# Returns
+A `ModVonMises` object with the specified parameters.
+
+# Notes
+- The `ModVonMises` distribution ensures that the VonMises distribution is properly wrapped around the unit circle, making it suitable for angular data.
+"""
 function ModVonMises(μ, κ)
     return ModVonMises(μ, κ, VonMises(μ, κ))
 end
+
+"""
+    Distributions.logpdf(d::ModVonMises, x::Real) -> Real
+
+Computes the log-probability density function (log-PDF) of the `ModVonMises` distribution at a given value `x`.
+
+# Arguments
+- `d::ModVonMises`: The `ModVonMises` distribution object.
+- `x::Real`: The value at which to evaluate the log-PDF.
+
+# Returns
+The log-probability density of the `ModVonMises` distribution at `x`.
+
+# Notes
+- If `x` is outside the range `[μ - π, μ + π]`, it is shifted by an appropriate multiple of `2π` to bring it within this range before evaluating the log-PDF.
+- This ensures the periodicity of the distribution on the unit circle.
+"""
 function Distributions.logpdf(d::ModVonMises, x::Real)
     # If x is outside the range [μ-π, μ+π], we need to shift it by the correct
     # amount of 2π to fit it there
     if x > d.μ + π
-        return logpdf(d.vonMisesDist, x-2π)
-    elseif x < d.μ -π
-        return logpdf(d.vonMisesDist, x+2π)
+        return logpdf(d.vonMisesDist, x - 2π)
+    elseif x < d.μ - π
+        return logpdf(d.vonMisesDist, x + 2π)
     else
-        return logpdf(d.vonMisesDist,x)
-    end
-end
-function Distributions.pdf(d::ModVonMises, x::Real)
-    # If x is outside the range [μ-π, μ+π], we need to shift it by the correct
-    # amount of 2π to fit it there
-    if x > d.μ + π
-        return pdf(d.vonMisesDist, x-2π)
-    elseif x < d.μ -π
-        return pdf(d.vonMisesDist, x+2π)
-    else
-        return pdf(d.vonMisesDist,x)
+        return logpdf(d.vonMisesDist, x)
     end
 end
 
 """
-    create_simplified_mcmc_model(observations, observed_values, observed_errors)
+    Distributions.pdf(d::ModVonMises, x::Real) -> Real
 
-Description
-Create a Turing model to perform a simplified MCMC sampling of the 
-pre-explosion and kick properties of a system, assuming pre-explosion 
-circularity, and only knowledge of the magnitude of the post-explosion
-sytemic velocity.
+Computes the probability density function (PDF) of the `ModVonMises` distribution at a given value `x`.
 
-# Arguments:
-- observations:    the parameters taken from observations [Vector{Symbol}]
-- observed_values: the values of the parameters           [Vector{Float64}] 
-- observed_errors: the errors of the observations         [Vector{Float64}]
+# Arguments
+- `d::ModVonMises`: The `ModVonMises` distribution object.
+- `x::Real`: The value at which to evaluate the PDF.
 
-- observations:    the parameters of the observational likelihoods [Observations]
-- priors:          the prior distributions on the parameters of interst [Priors]
-- likelihood:      the likelihood distribution (:Cauchy or :Normal)
-- bhModel:         the model for BH formation
+# Returns
+The probability density of the `ModVonMises` distribution at `x`.
 
+# Notes
+- If `x` is outside the range `[μ - π, μ + π]`, it is shifted by an appropriate multiple of `2π` to bring it within this range before evaluating the PDF.
+- This ensures the periodicity of the distribution on the unit circle.
+"""
+function Distributions.pdf(d::ModVonMises, x::Real)
+    # If x is outside the range [μ-π, μ+π], we need to shift it by the correct
+    # amount of 2π to fit it there
+    if x > d.μ + π
+        return pdf(d.vonMisesDist, x - 2π)
+    elseif x < d.μ - π
+        return pdf(d.vonMisesDist, x + 2π)
+    else
+        return pdf(d.vonMisesDist, x)
+    end
+end
 
+"""
+    create_simplified_mcmc_model(; observations, priors, likelihood=:Cauchy, bhModel=arbitraryEjectaBH)
 
-# Output:
-- kickmodel: A Turing model for sampling
+Creates a Turing model to perform a simplified MCMC sampling of the pre-explosion and kick properties of a system, assuming pre-explosion circularity.
+
+# Arguments
+- `observations::Observations`: Observational data, including parameters, values, errors, and units.
+- `priors::Priors`: Prior distributions for the parameters of interest.
+- `likelihood`: The likelihood distribution to use (`:Cauchy` or `:Normal`).
+- `bhModel`: The model for black hole formation (default: `arbitraryEjectaBH`).
+
+# Returns
+- A tuple containing the Turing model and the list of return properties.
 """
 function create_simplified_mcmc_model(;
     observations::Observations,
@@ -212,27 +271,25 @@ function create_simplified_mcmc_model(;
 end
 
 """
-    create_general_mcmc_model(observations, observed_values, observed_errors)
+    create_general_mcmc_model(; observations, priors, likelihood=:Cauchy, bhModel=arbitraryEjectaBH)
 
-Create a Turing model to perform an MCMC sampling of the pre-explosion 
-and kick properties of a system, assuming pre-explosion eccentricity.
+Creates a Turing model to perform an MCMC sampling of the pre-explosion and kick properties of a system, allowing for pre-explosion eccentricity.
 
-# RTW does acos just work? Do I need to worry about domain/range issues?
-# Check velocities, the conversions are a bit funky
+# Arguments
+- `observations::Observations`: Observational data, including parameters, values, errors, and units.
+- `priors::Priors`: Prior distributions for the parameters of interest.
+- `likelihood`: The likelihood distribution to use (`:Cauchy` or `:Normal`).
+- `bhModel`: The model for black hole formation (default: `arbitraryEjectaBH`).
 
-# Arguments:
-- observations:    the parameters taken from observations [Vector{Symbol}]
-- observed_values: the values of the parameters           [Vector{Float64}] 
-- observed_errors: the errors of the observations         [Vector{Float64}]
-
-# Output:
-- kickmodel: A Turing model for sampling
+# Returns
+- A tuple containing the Turing model and the list of return properties.
 """
 function create_general_mcmc_model(;
     observations::Observations,
     priors::Priors,
     likelihood = :Cauchy,
-    bhModel = arbitraryEjectaBH)
+    bhModel = arbitraryEjectaBH
+    )
     
     logm1_dist = priors.logm1_dist
     logm2_dist = priors.logm2_dist

@@ -18,7 +18,7 @@ DocMeta.setdocmeta!(SideKicks, :DocTestSetup, :(using SideKicks); recursive=true
 
 makedocs(;
     modules=[SideKicks],
-    authors="Pablo Marchant <pamarca@gmail.com> and contributors",
+    authors="Pablo Marchant <pamarca@gmail.com>, Reinhold Willcox <reinhold.willcox@gmail.com>, and contributors",
     sitename="SideKicks.jl",
     format=Documenter.HTML(;
         canonical="https://orlox.github.io/SideKicks.jl",
