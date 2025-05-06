@@ -56,16 +56,22 @@ end
     create_simplified_mcmc_model(observations, observed_values, observed_errors)
 
 Description
-Create a Turing model to perform an MCMC sampling of the pre-explosion 
-and kick properties of a system, assuming pre-explosion circularity.
-
-RTW this is more simplistic than just using a circular model, it's also
-assuming you know the eccentricity and don't care about radial velocity etc.
+Create a Turing model to perform a simplified MCMC sampling of the 
+pre-explosion and kick properties of a system, assuming pre-explosion 
+circularity, and only knowledge of the magnitude of the post-explosion
+sytemic velocity.
 
 # Arguments:
 - observations:    the parameters taken from observations [Vector{Symbol}]
 - observed_values: the values of the parameters           [Vector{Float64}] 
 - observed_errors: the errors of the observations         [Vector{Float64}]
+
+- observations:    the parameters of the observational likelihoods [Observations]
+- priors:          the prior distributions on the parameters of interst [Priors]
+- likelihood:      the likelihood distribution (:Cauchy or :Normal)
+- bhModel:         the model for BH formation
+
+
 
 # Output:
 - kickmodel: A Turing model for sampling
