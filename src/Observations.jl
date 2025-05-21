@@ -65,10 +65,19 @@ end
 
 A macro for programmatically creating Observations objects.
 
-Arguments
-observations: A matrix or array-like structure containing observed data.
-Returns
-An expression that creates an Observations object.
+# Arguments
+ - `observations`: A matrix or array-like structure containing observed data.
+
+# Returns
+- An expression that creates an Observations object.
+
+# Example
+```
+obs = SideKicks.@Observations([
+    [:P_f,  10.4031, 0.01,   day],
+    [:e_f,  0.017,   0.012,  1],
+])
+```
 """ 
 macro Observations(observations) 
     ex = Expr(:call) 

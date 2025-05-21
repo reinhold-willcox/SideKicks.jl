@@ -1,5 +1,5 @@
 """
-Main module for `SideKicks.jl` -- a analysis package for performing parameter inference on compact object stellar binaries.
+Main module for `SideKicks.jl` -- an analysis package for performing parameter inference on stellar binaries containing compact objects.
 
 """
 module SideKicks

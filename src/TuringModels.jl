@@ -8,7 +8,7 @@ This file defines custom probability distributions and Turing models for MCMC sa
 
 ## Overview
 - `WrappedCauchy`: A custom distribution resembling the Cauchy distribution on the unit circle.
-- `ModVonMises`: A wrapper for the VonMises distribution to extend its domain to [0, 2π].
+- `ShiftedVonMises`: A wrapper for the VonMises distribution to extend its domain to [0, 2π].
 - `create_simplified_mcmc_model`: Creates a simplified Turing model for MCMC sampling, assuming pre-explosion circularity.
 - `create_general_mcmc_model`: Creates a general Turing model for MCMC sampling, allowing for pre-explosion eccentricity.
 """
@@ -27,61 +27,70 @@ struct WrappedCauchy{T1<:Real, T2<:Real} <: ContinuousUnivariateDistribution
     σ::T2
 end
 
+"""
+TODO: add docs
+"""
 Distributions.logpdf(d::WrappedCauchy, x::Real) = log(1 / (2 * π) * sinh(d.σ)) - log(cosh(d.σ) - cos(x - d.μ))
 Distributions.pdf(d::WrappedCauchy, x::Real) = 1 / (2 * π) * sinh(d.σ) / (cosh(d.σ) - cos(x - d.μ))
 
-"""
-    struct ModVonMises{T1<:Real, T2<:Real} <: ContinuousUnivariateDistribution
 
-The `ModVonMises` distribution is a wrapper for the VonMises distribution (as defined in Distributions.jl) to extend its domain to [0, 2π].
+
+
+
+
+
+"""
+    struct ShiftedVonMises{T1<:Real, T2<:Real} <: ContinuousUnivariateDistribution
+
+The `ShiftedVonMises` distribution is a wrapper for the VonMises distribution (as defined in Distributions.jl) to extend its domain to [0, 2π].
 
 # Fields
 - `μ::T1`: The location parameter (mean angle).
 - `κ::T2`: The concentration parameter (controls the spread).
 - `vonMisesDist::ContinuousUnivariateDistribution`: The underlying VonMises distribution.
 """
-struct ModVonMises{T1<:Real, T2<:Real, T3<:ContinuousUnivariateDistribution} <: ContinuousUnivariateDistribution
+struct ShiftedVonMises{T1<:Real, T2<:Real, T3<:ContinuousUnivariateDistribution} <: ContinuousUnivariateDistribution
     μ::T1
     κ::T2
     vonMisesDist::T3
 end
 
 """
-    ModVonMises(μ::Real, κ::Real) -> ModVonMises
+    ShiftedVonMises(μ::Real, κ::Real) -> ShiftedVonMises
 
-Creates a `ModVonMises` distribution, which is a wrapper for the VonMises distribution to extend its domain to [0, 2π].
+Creates a `ShiftedVonMises` distribution, which is a wrapper for the VonMises distribution to extend its domain to [0, 2π].
 
 # Arguments
 - `μ::Real`: The location parameter (mean angle) of the distribution.
 - `κ::Real`: The concentration parameter (controls the spread) of the distribution.
 
 # Returns
-A `ModVonMises` object with the specified parameters.
+A `ShiftedVonMises` object with the specified parameters.
 
 # Notes
-- The `ModVonMises` distribution ensures that the VonMises distribution is properly wrapped around the unit circle, making it suitable for angular data.
+- The `ShiftedVonMises` distribution ensures that the VonMises distribution is properly wrapped around the unit circle, making it suitable for angular data.
 """
-function ModVonMises(μ, κ)
-    return ModVonMises(μ, κ, VonMises(μ, κ))
+function wrapped_vonmises(μ, κ)
+    return ShiftedVonMises(μ, κ, VonMises(μ, κ))
 end
 
 """
-    Distributions.logpdf(d::ModVonMises, x::Real) -> Real
+    Distributions.logpdf(d::ShiftedVonMises, x::Real) -> Real
 
-Computes the log-probability density function (log-PDF) of the `ModVonMises` distribution at a given value `x`.
+Computes the log-probability density function (log-PDF) of the `ShiftedVonMises` distribution at a given value `x`.
 
 # Arguments
-- `d::ModVonMises`: The `ModVonMises` distribution object.
+- `d::ShiftedVonMises`: The `ShiftedVonMises` distribution object.
 - `x::Real`: The value at which to evaluate the log-PDF.
 
 # Returns
-The log-probability density of the `ModVonMises` distribution at `x`.
+The log-probability density of the `ShiftedVonMises` distribution at `x`.
 
 # Notes
 - If `x` is outside the range `[μ - π, μ + π]`, it is shifted by an appropriate multiple of `2π` to bring it within this range before evaluating the log-PDF.
 - This ensures the periodicity of the distribution on the unit circle.
 """
-function Distributions.logpdf(d::ModVonMises, x::Real)
+function Distributions.logpdf(d::ShiftedVonMises, x::Real)
     # If x is outside the range [μ-π, μ+π], we need to shift it by the correct
     # amount of 2π to fit it there
     if x > d.μ + π
@@ -94,22 +103,22 @@ function Distributions.logpdf(d::ModVonMises, x::Real)
 end
 
 """
-    Distributions.pdf(d::ModVonMises, x::Real) -> Real
+    Distributions.pdf(d::ShiftedVonMises, x::Real) -> Real
 
-Computes the probability density function (PDF) of the `ModVonMises` distribution at a given value `x`.
+Computes the probability density function (PDF) of the `ShiftedVonMises` distribution at a given value `x`.
 
 # Arguments
-- `d::ModVonMises`: The `ModVonMises` distribution object.
+- `d::ShiftedVonMises`: The `ShiftedVonMises` distribution object.
 - `x::Real`: The value at which to evaluate the PDF.
 
 # Returns
-The probability density of the `ModVonMises` distribution at `x`.
+The probability density of the `ShiftedVonMises` distribution at `x`.
 
 # Notes
 - If `x` is outside the range `[μ - π, μ + π]`, it is shifted by an appropriate multiple of `2π` to bring it within this range before evaluating the PDF.
 - This ensures the periodicity of the distribution on the unit circle.
 """
-function Distributions.pdf(d::ModVonMises, x::Real)
+function Distributions.pdf(d::ShiftedVonMises, x::Real)
     # If x is outside the range [μ-π, μ+π], we need to shift it by the correct
     # amount of 2π to fit it there
     if x > d.μ + π
@@ -445,11 +454,11 @@ function create_general_mcmc_model(;
             elseif obs_symbol == :Ω_f
                 use_cauchy ?
                     obs_vals[ii] ~ WrappedCauchy(Ω_f, obs_errs[ii]) :
-                    obs_vals[ii] ~ ModVonMises(Ω_f, 1/obs_errs[ii]^2)
+                    obs_vals[ii] ~ ShiftedVonMises(Ω_f, 1/obs_errs[ii]^2)
             elseif obs_symbol == :ω_f
                 use_cauchy ?
                     obs_vals[ii] ~ WrappedCauchy(ω_f, obs_errs[ii]) :
-                    obs_vals[ii] ~ ModVonMises(ω_f, 1/obs_errs[ii]^2)
+                    obs_vals[ii] ~ ShiftedVonMises(ω_f, 1/obs_errs[ii]^2)
             elseif obs_symbol == :vf_α
                 use_cauchy ?
                     obs_vals[ii] ~ Cauchy(vf_α, obs_errs[ii]) :

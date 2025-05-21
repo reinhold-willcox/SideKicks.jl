@@ -108,6 +108,7 @@ function KickMCMC(; which_model, observations::Tuple{Observations, String}, prio
         end
         results[prop] = chain_array
     end
+
     # Add weights to dict
     logweights = zeros(Float64, nsamples, nchains) # Matrix (nsample x nchain)
     for i_chain in 1:nchains
@@ -126,7 +127,7 @@ function KickMCMC(; which_model, observations::Tuple{Observations, String}, prio
         throw(ErrorException("Failed to reweight samples"))
     end
 
-    # for the general model, need to reweight by the true anomaly
+    # For the general model, reweigh by the true anomaly
     if which_model==:general
         results[:weights] .= results[:weights].*sqrt.(1 .- results[:e_i].^2).^3 ./ (1 .+ results[:e_i].*cos.(results[:ν_i])).^2
     end
@@ -139,9 +140,11 @@ function KickMCMC(; which_model, observations::Tuple{Observations, String}, prio
         if key ∈ [:results_keys, :weights]
             continue
         end
-        # update dicts
+        
+        # Update dicts
         ess_i = MCMCDiagnosticTools.ess(results[key])
         rhat_i = MCMCDiagnosticTools.rhat(results[key])
+
         # If estimands are outside the recommended range, print warning - see VehtariGelman2021
         if ess_i < 100 * nchains
             print("Effective Sample Size is low for "*String(key)*": ")
