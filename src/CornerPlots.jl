@@ -1,6 +1,6 @@
 using StatsBase
-using CairoMakie
-using CornerPlotting
+#using CairoMakie
+#using CornerPlotting
 
 export create_corner_plot 
 

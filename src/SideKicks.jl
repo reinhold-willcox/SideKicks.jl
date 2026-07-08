@@ -11,7 +11,7 @@ include("Observations.jl")
 include("Priors.jl")
 include("TuringModels.jl")
 include("KickMCMC.jl")
-include("CornerPlots.jl")
+#include("CornerPlots.jl")
 include("OutputStorage.jl")
 
 end # module

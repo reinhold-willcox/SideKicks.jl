@@ -337,6 +337,7 @@ function create_general_mcmc_model(;
                 vkick=vkick, θ=θ, ϕ=ϕ, ν_i=ν_i, Ω_i=Ω_i, ω_i=ω_i, i_i=i_i)
         P_f = kepler_P_from_a(m1=m1_f, m2=m2_f, a=a_f)
         P_circ = P_f * (1-e_f^2)^(3/2)
+        a_sini = a_f * (sin(i_f))
         if use_Pf 
             K1 = RV_semiamplitude_K1(m1=m1_f, m2=m2_f, P=P_f, e=e_f, i=i_f)
             K2 = RV_semiamplitude_K1(m1=m2_f, m2=m1_f, P=P_f, e=e_f, i=i_f)
